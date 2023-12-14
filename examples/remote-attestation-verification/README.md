@@ -1,20 +1,19 @@
+**WORK IN PROGRESS**
 
-# Example Suapp with OnChain state
+> [!CAUTION]
+> Since `suave-geth` does not run in SGX yet, this example uses a precompile
+> ([`getAttestationVerificationReport()`](https://github.com/sbellem/suave-geth/blob/da5f949f7e5317c9b71666ec206a5ff8beae9e6c/core/vm/contracts_suave.go#L190)) that currently mocks the action of generating a remote
+> attestation report.
 
-This example shows how Suapps can update state of the smart contract on the Suave chain.
-
-State variables updated during the confidential request are not updated on the state since the execution is confidential. But, a confidential request can update the state with a callback.
+# Example Suapp to verify an SGX IAS remote attestation report
+This example shows how Suapps can use the precompile
+`getAttestationVerificationReport()` to verify that a kettle is running the expected
+software (`MRENCLAVE`) on genuine SGX hardware.
 
 ## How to use
 
-Run `Suave` in development mode:
+Use docker compose from the root of the repo:
 
 ```
-$ suave --suave.dev
-```
-
-Execute the deployment script:
-
-```
-$ go run main.go
+docker compose --file examples/remote-attestation-verification/docker-compose.yml up
 ```

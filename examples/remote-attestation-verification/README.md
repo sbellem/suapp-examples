@@ -12,8 +12,16 @@ software (`MRENCLAVE`) on genuine SGX hardware.
 
 ## How to use
 
-Use docker compose from the root of the repo:
+Use docker compose.
 
+From this directory (`./examples/remote-attestation-verification`):
+
+```shell
+docker compose up
 ```
+
+From the root of the repo:
+
+```shell
 docker compose --file examples/remote-attestation-verification/docker-compose.yml up
 ```

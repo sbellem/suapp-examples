@@ -9,10 +9,8 @@ WORKDIR /usr/src/suapp-examples
 COPY foundry.toml go.mod go.sum Makefile .
 
 COPY examples /usr/src/suapp-examples/examples
+COPY framework /usr/src/suapp-examples/framework
 COPY lib /usr/src/suapp-examples/lib
 COPY suave-geth /usr/src/suapp-examples/suave-geth
-#COPY suave-geth/suave /usr/src/suapp-examples/suave-geth/suave
 
 RUN ${FOUNDRY_BIN}/forge build
-
-COPY framework /usr/src/suapp-examples/framework

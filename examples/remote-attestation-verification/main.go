@@ -24,7 +24,9 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("attestation quote", attestationVerificationEvent.isvEnclaveQuoteBody)
+	fmt.Println("attestation quote base64", attestationVerificationEvent.isvEnclaveQuoteBodyBase64)
+	fmt.Println("attestation quote bytes", attestationVerificationEvent.isvEnclaveQuoteBodyBytes)
+	//fmt.Println("attestation payload bytes", attestationVerificationEvent.payload)
 	//val := contract.Call("getAttestationVerificationReport")[0].(string)
 	//val := contract.Call("getAttestationVerificationReport")
 	//fmt.Println("IAS report verif", val)
@@ -43,7 +45,9 @@ func init() {
 
 type AttestationVerificationEvent struct {
 	//iasResponse         types.IASResponse
-	isvEnclaveQuoteBody string
+	isvEnclaveQuoteBodyBase64 string
+	isvEnclaveQuoteBodyBytes  []byte
+	payload                   []byte
 }
 
 func (e *AttestationVerificationEvent) Unpack(log *types.Log) error {
@@ -52,6 +56,8 @@ func (e *AttestationVerificationEvent) Unpack(log *types.Log) error {
 		return err
 	}
 	//e.iasResponse = unpacked[0].(types.IASResponse)
-	e.isvEnclaveQuoteBody = unpacked[1].(string)
+	e.isvEnclaveQuoteBodyBase64 = unpacked[1].(string)
+	e.isvEnclaveQuoteBodyBytes = unpacked[2].([]byte)
+	//e.payload = unpacked[3].([]byte)
 	return nil
 }

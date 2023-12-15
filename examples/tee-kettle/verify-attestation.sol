@@ -71,10 +71,8 @@ contract VerifyAttestation is Test, RAVE {
         bytes32 mrsigner,
         bytes memory expPayload
     ) internal returns (bytes memory) {
-        //RAVEBase c = new RAVE();
         bytes memory gotPayload = this.verifyRemoteAttestation(report, sig, signingMod, signingExp, mrenclave, mrsigner);
         return gotPayload;
-        //return expPayload;
         //assert(keccak256(gotPayload.substring(0, expPayload.length)) == keccak256(expPayload));
     }
 
@@ -85,8 +83,9 @@ contract VerifyAttestation is Test, RAVE {
         bytes memory signingExp = signingExp();
         bytes32 mrenclave = mrenclave();
         bytes32 mrsigner = mrsigner();
-        bytes memory payload = payload();
-        bytes memory gotPayload = run_verifyRemoteAttestation(report, sig, signingMod, signingExp, mrenclave, mrsigner, payload);
+        //bytes memory payload = payload();
+        //bytes memory gotPayload = run_verifyRemoteAttestation(report, sig, signingMod, signingExp, mrenclave, mrsigner, payload);
+        bytes memory gotPayload = this.verifyRemoteAttestation(report, sig, signingMod, signingExp, mrenclave, mrsigner);
         return gotPayload;
     }
 

@@ -1,0 +1,16 @@
+version: "3.8"
+
+include:
+  - ../../suave-geth.yml
+
+services:
+  app-ofa-private:
+    image: suapp:local
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    volumes:
+      - ../../framework:/usr/src/suapp-examples/framework
+    command: go run examples/app-ofa-private/main.go
+    depends_on:
+      - suave-mevm

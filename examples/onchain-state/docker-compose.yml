@@ -1,0 +1,17 @@
+version: "3.8"
+
+include:
+  - ../../suave-geth.yml
+
+services:
+  suapp-onchain-state:
+    image: suapp:local
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    volumes:
+      - ../../framework:/usr/src/suapp-examples/framework
+      - ./main.go:/usr/src/suapp-examples/examples/onchain-state/main.go
+    command: go run examples/onchain-state/main.go
+    depends_on:
+      - suave-mevm

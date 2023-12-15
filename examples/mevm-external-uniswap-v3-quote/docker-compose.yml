@@ -1,0 +1,16 @@
+version: "3.8"
+
+include:
+  - ../../suave-geth.yml
+
+services:
+  suapp-mevm-external-uniswap-v3-quote:
+    image: suapp:local
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    volumes:
+      - ../../framework:/usr/src/suapp-examples/framework
+    command: go run examples/mevm-external-uniswap-v3-quote/main.go
+    depends_on:
+      - suave-mevm

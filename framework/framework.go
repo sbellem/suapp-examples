@@ -177,13 +177,13 @@ func New() *Framework {
 func (f *Framework) DeployContract(path string) *Contract {
 	artifact, err := ReadArtifact(path)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("failed to read artifact", err))
 	}
 
 	// deploy contract
 	txnResult, err := sdk.DeployContract(artifact.Code, f.clt)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("failed to deploy contract", err))
 	}
 
 	receipt, err := txnResult.Wait()

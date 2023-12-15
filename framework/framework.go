@@ -52,7 +52,7 @@ func ReadArtifact(path string) (*Artifact, error) {
 
 	code, err := hex.DecodeString(artifact.Bytecode.Object[2:])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("hex.DecodeString failed ... for: ", artifact.Bytecode.Object[2:], err)
 	}
 
 	art := &Artifact{

@@ -27,14 +27,19 @@ docker compose --file examples/tee-kettle/docker-compose.yml up
 ```
 
 # Current Status and Future Work
-RAVE function `verifyRemoteAttestation()` is called with the report data obtained from
-the precompiled, which returns a hardcoded (mock) IAS response (body and headers).
+RAVE function `verifyRemoteAttestation()` is called with the report (IAS response body)
+obtained from the precompile, which returns a hardcoded (mock) IAS response (body and
+headers). The call to `verifyRemoteAttestation()` returns a public key, which eventually
+will be the kettle address, but for now we are returning a hardcoded mocked value for
+the purpose of testing. This public key is contained in `isvEnclaveQuoteBody` which is
+part of the IAS response body which is obtained from the call to the precompile
+[`getAttestationVerificationReport`][getAttestationVerificationReport].
 
-The report data is from the IAS response body.
-
-The code snippet below shows the current status:
+The code snippet below may help to give context to the above explanation.
 
 ```solidity
+// examples/tee-kettle/verify-attestation.sol
+
 import { RAVE } from "rave/RAVE.sol";
 
 contract VerifyAttestation is Test, RAVE {
@@ -51,8 +56,16 @@ contract VerifyAttestation is Test, RAVE {
     }
 ```
 
+The returned payload is logged to the terminal when running the demo with
+`docker compose up`:
+
+```shell
+tee-kettle-suapp-tee-kettle-1     | attestation payload hex a4f1e2de42ade42856a6e7b029432278d76ad1c3e86ceccd6f2f46532861c20c0615a3b4f8a3e283d23c09255e51360e00000000000000000000000000000000
+```
+
+## Future Work
 The parameters `sig`, `signingMod`, and `signingExp` can be extracted out of the headers
-of the IAS response obtained from the precompiled. This has yet to be done. Currently,
+of the IAS response obtained from the precompile. This has yet to be done. Currently,
 some hardcoded values from RAVE's tests are used.
 
 The `mrenclave` and `mrsigner` are values which are expected, and could be passed to the
@@ -60,7 +73,7 @@ contract entrypoint that triggers the attestation verification. Ultimately, the
 `mrenclave` should be obtained from re-building the trusted software that a kettle is
 expected to run.
 
-Hence, the above code snippet should eventually look like:
+The above code snippet should eventually look like:
 
 ```solidity
 import { RAVE } from "rave/RAVE.sol";
@@ -80,7 +93,6 @@ contract VerifyAttestation is Test, RAVE {
         return gotPayload;
     }
 ```
-
 
 
 [getAttestationVerificationReport]: https://github.com/sbellem/suave-geth/blob/da5f949f7e5317c9b71666ec206a5ff8beae9e6c/core/vm/contracts_suave.go#L190

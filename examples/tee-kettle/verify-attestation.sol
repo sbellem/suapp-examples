@@ -2,10 +2,8 @@
 pragma solidity ^0.8.8;
 
 import "../../suave-geth/suave/sol/libraries/Suave.sol";
-//import "forge-std/console.sol";
 import { Test, console } from "forge-std/Test.sol";
 import { Base64 } from "openzeppelin/utils/Base64.sol";
-//import { RAVEBase } from "rave/RAVEBase.sol";
 import { RAVE } from "rave/RAVE.sol";
 import { X509Verifier } from "rave/X509Verifier.sol";
 
@@ -27,8 +25,6 @@ contract VerifyAttestation is Test, RAVE {
     );
 
     function emitAttestationVerification(AttestationVerificationData memory avd) public payable {
-        //bytes memory isvEnclaveQuoteBodyBytes = iasResponse.body.isvEnclaveQuoteBody;
-        //string memory isvEnclaveQuoteBodyBase64 = Base64.encode(isvEnclaveQuoteBodyBytes);
         emit AttestationVerificationEvent(
             avd.iasResponse,
             avd.isvEnclaveQuoteBodyBase64,
@@ -83,8 +79,6 @@ contract VerifyAttestation is Test, RAVE {
         bytes memory signingExp = signingExp();
         bytes32 mrenclave = mrenclave();
         bytes32 mrsigner = mrsigner();
-        //bytes memory payload = payload();
-        //bytes memory gotPayload = run_verifyRemoteAttestation(report, sig, signingMod, signingExp, mrenclave, mrsigner, payload);
         bytes memory gotPayload = this.verifyRemoteAttestation(report, sig, signingMod, signingExp, mrenclave, mrsigner);
         return gotPayload;
     }

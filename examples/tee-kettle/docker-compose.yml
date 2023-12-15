@@ -1,0 +1,19 @@
+version: "3.8"
+
+include:
+  - ../../suave-geth.yml
+
+services:
+  suapp-tee-kettle:
+    image: suapp:local
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    volumes:
+      - ../../framework:/usr/src/suapps/framework
+      - ./main.go:/usr/src/suapps/examples/tee-kettle/main.go
+      - ./verify-attestation.sol:/usr/src/suapps/examples/tee-kettle/verify-attestation.sol
+      - ./run.sh:/usr/src/suapps/examples/tee-kettle/run.sh
+    command: ./examples/tee-kettle/run.sh
+    depends_on:
+      - suave-mevm

@@ -16,7 +16,18 @@ func main() {
 
 	fmt.Println("Remote attestation verification ...")
 
-	receipt := contract.SendTransaction("example", nil, nil)
+	var mrenclave [32]byte
+	_mrenclave := common.FromHex("0xd0ae774774c2064a60dd92541fcc7cb8b3acdea0d793f3b27a27a44dbf71e75f")
+	copy(mrenclave[:], _mrenclave)
+
+	var mrsigner [32]byte
+	_mrsigner := common.FromHex("0x83d719e77deaca1470f6baf62a4d774303c899db69020f9c70ee1dfc08c7ce9e")
+	copy(mrsigner[:], _mrsigner)
+
+	expectedPayload := common.FromHex(
+		"0xa4f1e2de42ade42856a6e7b029432278d76ad1c3e86ceccd6f2f46532861c20c0615a3b4f8a3e283d23c09255e51360e")
+
+	receipt := contract.SendTransaction("verifyTeeKettle", []interface{}{mrenclave, mrsigner, expectedPayload}, nil)
 	fmt.Println("receipt", receipt.Logs[0])
 
 	attestationVerificationEvent := &AttestationVerificationEvent{}
@@ -28,13 +39,6 @@ func main() {
 	fmt.Println("attestation quote bytes", attestationVerificationEvent.isvEnclaveQuoteBodyBytes)
 	fmt.Println("attestation payload bytes", attestationVerificationEvent.payload)
 	fmt.Println("attestation payload hex", common.Bytes2Hex(attestationVerificationEvent.payload))
-	//val := contract.Call("getAttestationVerificationReport")[0].(string)
-	//val := contract.Call("getAttestationVerificationReport")
-	//fmt.Println("IAS report verif", val)
-	//if val != 1 {
-	//	fmt.Printf("expected 1")
-	//	os.Exit(1)
-	//}
 }
 
 var attestationVerificationEventABI abi.Event
@@ -45,7 +49,6 @@ func init() {
 }
 
 type AttestationVerificationEvent struct {
-	//iasResponse         types.IASResponse
 	isvEnclaveQuoteBodyBase64 string
 	isvEnclaveQuoteBodyBytes  []byte
 	payload                   []byte
@@ -56,7 +59,6 @@ func (e *AttestationVerificationEvent) Unpack(log *types.Log) error {
 	if err != nil {
 		return err
 	}
-	//e.iasResponse = unpacked[0].(types.IASResponse)
 	e.isvEnclaveQuoteBodyBase64 = unpacked[1].(string)
 	e.isvEnclaveQuoteBodyBytes = unpacked[2].([]byte)
 	e.payload = unpacked[3].([]byte)

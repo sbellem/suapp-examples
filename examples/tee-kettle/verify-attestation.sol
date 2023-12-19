@@ -19,25 +19,88 @@ contract VerifyAttestation is Test, RAVE {
     bytes constant leafExponent = hex"010001";
 
     struct AttestationVerificationData {
-        Suave.IASResponse iasResponse;
-        string isvEnclaveQuoteBodyBase64;
-        bytes isvEnclaveQuoteBodyBytes;
+        bytes32 mrenclave;
+        bytes32 mrsigner;
         bytes payload;
     }
 
+    // TODO
+    // mrenclave and mrsigner are redundant as they are passed by the client
+    // instead, it may be more useful to make the IAS report data available in an
+    // event log -- also perhaps, it could be useful to also provide the IAS headers
+    // so that one can verify the IAS report offchain as some kind of sanity check (?)
+        //Suave.IASResponse iasResponse,
     event AttestationVerificationEvent (
-        Suave.IASResponse iasResponse,
-        string isvEnclaveQuoteBodyBase64,
-        bytes isvEnclaveQuoteBodyBytes,
+        bytes32 mrenclave,
+        bytes32 mrsigner,
         bytes payload
     );
 
     function emitAttestationVerification(AttestationVerificationData memory avd) public payable {
         emit AttestationVerificationEvent(
-            avd.iasResponse,
-            avd.isvEnclaveQuoteBodyBase64,
-            avd.isvEnclaveQuoteBodyBytes,
+            //avd.iasResponse,
+            avd.mrenclave,
+            avd.mrsigner,
             avd.payload
+        );
+    }
+
+    function verifyTeeKettle(
+        bytes32 mrenclave,
+        bytes32 mrsigner,
+        bytes memory expectedPayload
+    ) external payable returns (bytes memory) {
+        // Is this necessary?
+        //require(Suave.isConfidential());
+
+        Suave.IASResponse memory iasResponse = Suave.getAttestationVerificationReport();
+
+        // TODO: move this in separate function
+        //bytes memory payload1 = verifyRA(iasResponse, mrenclave, mrsigner);
+
+        bytes memory report = _report(iasResponse.body);
+        bytes memory sig = iasResponse.headers.xIASReportSignature;
+        bytes memory signingCert = iasResponse.headers.xIASReportSigningCertificate;
+
+        // is bytes(report) necessary? it's already bytes _report() returns bytes
+        bytes memory payload = this.rave(
+            bytes(report),
+            sig,
+            signingCert,
+            intelRootModulus,
+            intelRootExponent,
+            mrenclave,
+            mrsigner
+        );
+
+        assert(keccak256(payload.substring(0, expectedPayload.length)) == keccak256(expectedPayload));
+
+        // instantiateevent
+        AttestationVerificationData memory avd;
+        //avd.iasResponse = iasResponse;
+        //avd.isvEnclaveQuoteBodyBase64 = Base64.encode(iasResponse.body.isvEnclaveQuoteBody);
+        //avd.isvEnclaveQuoteBodyBytes = iasResponse.body.isvEnclaveQuoteBody;
+        avd.mrenclave = mrenclave;
+        avd.mrsigner = mrsigner;
+        avd.payload = payload;
+
+        // TODO: move this in a separate (test) function
+        //testIntelCertChainFromSignedX509(iasResponse.headers);
+
+        return abi.encodeWithSelector(this.emitAttestationVerification.selector, avd);
+    }
+
+    function _report(Suave.IASResponseBody memory iasResponseBody) internal view returns (bytes memory) {
+        return abi.encode(
+            iasResponseBody.id,
+            iasResponseBody.timestamp,
+            iasResponseBody.version,
+            iasResponseBody.epidPseudonym,
+            iasResponseBody.advisoryURL,
+            iasResponseBody.advisoryIDs,
+            iasResponseBody.isvEnclaveQuoteStatus,
+            // already Base64 decoded by the precompile
+            iasResponseBody.isvEnclaveQuoteBody
         );
     }
 
@@ -47,34 +110,22 @@ contract VerifyAttestation is Test, RAVE {
         return isvEnclaveQuoteBodyBase64;
     }
 
-    function verifyTeeKettle(
+
+    // adapted from RAVE's tests
+    function rave(
+        Suave.IASResponse memory iasResponse,
         bytes32 mrenclave,
-        bytes32 mrsigner,
-        bytes memory expectedPayload
-    ) external payable returns (bytes memory) {
-        require(Suave.isConfidential());
-        Suave.IASResponse memory iasResponse = Suave.getAttestationVerificationReport();
-        string memory isvEnclaveQuoteBodyBase64 = Base64.encode(iasResponse.body.isvEnclaveQuoteBody);
+        bytes32 mrsigner
+    ) public view returns (bytes memory) {
+        bytes memory report = _report(iasResponse.body);
+        bytes memory sig = iasResponse.headers.xIASReportSignature;
+        bytes memory signingCert = iasResponse.headers.xIASReportSigningCertificate;
+        bytes memory payload =
+            this.rave(bytes(report), sig, signingCert, intelRootModulus, intelRootExponent, mrenclave, mrsigner);
 
-        bytes memory payload1 = verifyRA(iasResponse, mrenclave, mrsigner);
-        bytes memory payload2 = rave(iasResponse, mrenclave, mrsigner);
-        assertEq(payload1, payload2);
-
-        assert(keccak256(payload1.substring(0, expectedPayload.length)) == keccak256(expectedPayload));
-
-        AttestationVerificationData memory avd;
-        avd.iasResponse = iasResponse;
-        avd.isvEnclaveQuoteBodyBase64 = isvEnclaveQuoteBodyBase64;
-        avd.isvEnclaveQuoteBodyBytes = iasResponse.body.isvEnclaveQuoteBody;
-        avd.payload = payload2;
-
-        testIntelCertChainFromSignedX509(iasResponse.headers);
-
-        return abi.encodeWithSelector(this.emitAttestationVerification.selector, avd);
+        return payload;
     }
 
-
-    // test & mocks from Rave
     function verifyRA(
         Suave.IASResponse memory iasResponse,
         bytes32 mrenclave,
@@ -93,35 +144,6 @@ contract VerifyAttestation is Test, RAVE {
         return gotPayload;
     }
 
-    function rave(
-        Suave.IASResponse memory iasResponse,
-        bytes32 mrenclave,
-        bytes32 mrsigner
-    ) public view returns (bytes memory) {
-        bytes memory report = _report(iasResponse.body);
-        bytes memory sig = iasResponse.headers.xIASReportSignature;
-        bytes memory signingCert = iasResponse.headers.xIASReportSigningCertificate;
-        bytes memory payload =
-            this.rave(bytes(report), sig, signingCert, intelRootModulus, intelRootExponent, mrenclave, mrsigner);
-
-        return payload;
-    }
-
-    function _report(Suave.IASResponseBody memory iasResponseBody) internal view returns (bytes memory) {
-        return abi.encode(
-            iasResponseBody.id,
-            iasResponseBody.timestamp,
-            iasResponseBody.version,
-            iasResponseBody.epidPseudonym,
-            iasResponseBody.advisoryURL,
-            iasResponseBody.advisoryIDs,
-            iasResponseBody.isvEnclaveQuoteStatus,
-            // already Base64 decoded by the precompile
-            iasResponseBody.isvEnclaveQuoteBody
-        );
-    }
-
-    // adapted from RAVE's tests
     function testIntelCertChainFromSignedX509(Suave.IASResponseHeaders memory iasResponseHeaders) public {
         bytes memory certBytes = iasResponseHeaders.xIASReportSigningCertificate;
 

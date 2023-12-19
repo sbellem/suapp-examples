@@ -28,17 +28,16 @@ func main() {
 		"0xa4f1e2de42ade42856a6e7b029432278d76ad1c3e86ceccd6f2f46532861c20c0615a3b4f8a3e283d23c09255e51360e")
 
 	receipt := contract.SendTransaction("verifyTeeKettle", []interface{}{mrenclave, mrsigner, expectedPayload}, nil)
-	fmt.Println("receipt", receipt.Logs[0])
+	//fmt.Println("receipt", receipt.Logs[0])
 
 	attestationVerificationEvent := &AttestationVerificationEvent{}
 	if err := attestationVerificationEvent.Unpack(receipt.Logs[0]); err != nil {
 		panic(err)
 	}
 
-	fmt.Println("attestation quote base64", attestationVerificationEvent.isvEnclaveQuoteBodyBase64)
-	fmt.Println("attestation quote bytes", attestationVerificationEvent.isvEnclaveQuoteBodyBytes)
-	fmt.Println("attestation payload bytes", attestationVerificationEvent.payload)
-	fmt.Println("attestation payload hex", common.Bytes2Hex(attestationVerificationEvent.payload))
+	fmt.Println("attestation mrenclave hex", common.Bytes2Hex(attestationVerificationEvent.mrenclave))
+	fmt.Println("attestation mrsigner hex", common.Bytes2Hex(attestationVerificationEvent.mrsigner))
+	fmt.Println("attestation payload hex (should be kettle address)", common.Bytes2Hex(attestationVerificationEvent.payload))
 }
 
 var attestationVerificationEventABI abi.Event
@@ -49,18 +48,24 @@ func init() {
 }
 
 type AttestationVerificationEvent struct {
-	isvEnclaveQuoteBodyBase64 string
-	isvEnclaveQuoteBodyBytes  []byte
-	payload                   []byte
+	mrenclave []byte
+	mrsigner  []byte
+	payload   []byte
 }
 
 func (e *AttestationVerificationEvent) Unpack(log *types.Log) error {
 	unpacked, err := attestationVerificationEventABI.Inputs.Unpack(log.Data)
+
 	if err != nil {
 		return err
 	}
-	e.isvEnclaveQuoteBodyBase64 = unpacked[1].(string)
-	e.isvEnclaveQuoteBodyBytes = unpacked[2].([]byte)
-	e.payload = unpacked[3].([]byte)
+
+	_mrenclave := unpacked[0].([32]byte)
+	_mrsigner := unpacked[1].([32]byte)
+
+	e.mrenclave = _mrenclave[:]
+	e.mrsigner = _mrsigner[:]
+	e.payload = unpacked[2].([]byte)
+
 	return nil
 }

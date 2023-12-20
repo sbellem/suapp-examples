@@ -27,13 +27,14 @@ docker compose --file examples/tee-kettle/docker-compose.yml up
 ```
 
 # Current Status and Future Work
-RAVE function `verifyRemoteAttestation()` is called with the report (IAS response body)
+RAVE function `rave()` is called with the report (IAS response body)
 obtained from the precompile, which returns a hardcoded (mock) IAS response (body and
-headers). The call to `verifyRemoteAttestation()` returns a public key, which eventually
+headers). The call to `rave()` returns a public key, which eventually
 will be the kettle address, but for now we are returning a hardcoded mocked value for
 the purpose of testing. This public key is contained in `isvEnclaveQuoteBody` which is
 part of the IAS response body which is obtained from the call to the precompile
 [`getAttestationVerificationReport`][getAttestationVerificationReport].
+
 
 The code snippet below may help to give context to the above explanation.
 
@@ -64,35 +65,10 @@ tee-kettle-suapp-tee-kettle-1     | attestation payload hex a4f1e2de42ade42856a6
 ```
 
 ## Future Work
-The parameters `sig`, `signingMod`, and `signingExp` can be extracted out of the headers
-of the IAS response obtained from the precompile. This has yet to be done. Currently,
-some hardcoded values from RAVE's tests are used.
-
-The `mrenclave` and `mrsigner` are values which are expected, and could be passed to the
-contract entrypoint that triggers the attestation verification. Ultimately, the
-`mrenclave` should be obtained from re-building the trusted software that a kettle is
-expected to run.
-
-The above code snippet should eventually look like:
-
-```solidity
-import { RAVE } from "rave/RAVE.sol";
-
-contract VerifyAttestation is Test, RAVE {
-
-    function verifyRA(
-        Suave.IASResponse memory iasResponse,
-        bytes32 memory mrenclave,
-        bytes32 memory mrsigner
-    ) internal returns (bytes memory) {
-        bytes memory report = report(iasResponse.body);
-        bytes memory sig = sig(iasResponse.headers);
-        bytes memory signingMod = signingMod(iasResponse.headers);
-        bytes memory signingExp = signingExp(iasResponse.headers);
-        bytes memory gotPayload = this.verifyRemoteAttestation(report, sig, signingMod, signingExp, mrenclave, mrsigner);
-        return gotPayload;
-    }
-```
+Generate a quote such that the report data contains the kettle address from
+`framework.go` and an optional 64-byte commitment (e.g. SHA 256). Upon successful
+verification, add kettle address to a contract state variable that stores kettles
+that have been verified, along with their commitment hash.
 
 
 [getAttestationVerificationReport]: https://github.com/sbellem/suave-geth/blob/da5f949f7e5317c9b71666ec206a5ff8beae9e6c/core/vm/contracts_suave.go#L190
